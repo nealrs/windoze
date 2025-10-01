@@ -6,9 +6,12 @@
   "permissions": [
     "tabs",
     "tabGroups",
+    "windows",
     "sidePanel",
     "storage"
   ],
+  "homepage_url": "https://github.com/nealrs/windoze",
+  "author": "Neal Shyam",
   "side_panel": {
     "default_path": "sidebar.html"
   },

@@ -9,12 +9,14 @@ body {
     max-width: 600px; /* Added responsiveness */
 }
 
+/* TODO: unused, delete later - kept for possible future header UI */
 .header {
     padding-bottom: 10px;
     border-bottom: 1px solid #ddd;
     margin-bottom: 10px;
 }
 
+/* TODO: unused, delete later - kept for possible future header UI */
 h1 {
     font-size: 16px;
     margin: 0;
@@ -74,22 +76,25 @@ h1 {
     font-weight: bold;
 }
 
-.window-list, .group-list, .tab-list {
+.window-list, .group-list, .tab-list, .tab-list-in-group, .tab-list-no-group {
     list-style: none;
     padding-left: 0;
     margin-top: 0; /* Remove default ul margin */
     margin-bottom: 0;
 }
 
+/* TODO: .tab-list is currently unused by the JS (we use -in-group / -no-group).
+   Keep this rule for now; remove later if you don't add a generic tab-list. */
+
 /* Indentation levels */
 .group-list {
-    padding-left: 20px;
+    padding-left: 30px; /* Align group headers with ungrouped tabs */
 }
 .tab-list-in-group {
-    padding-left: 40px; /* Increased indent for tabs inside a group */
+    padding-left: 30px; /* Tabs inside a group set to 30px per request */
 }
 .tab-list-no-group {
-    padding-left: 40px; /* Tabs not in group, same as group level */
+    padding-left: 30px; /* Tabs not in group, same as group header level */
 }
 
 
@@ -104,25 +109,72 @@ h1 {
 }
 
 .group-color-dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    margin-right: 8px;
+    margin-right: 10px;
     flex-shrink: 0;
     border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Custom open-circle bullets for groups and tabs. Use pseudo-elements so bullets
+   are consistently sized and vertically aligned with favicons (16px). */
+.tab-item::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.35);
+    margin-right: 10px; /* same spacing as favicons */
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+/* If you want the bullet to sit exactly where the favicon sits, reduce favicon's left margin
+   (we already use flex layout and matching sizes to align them). */
+/* TODO: .group-item .item-icon is unused (group headers use `.group-color-dot`).
+   Keep the rule for now in case group markup is reverted. */
+.group-item .item-icon,
+.tab-item .item-icon {
+    /* keep favicon but ensure alignment with the bullet */
+    margin-right: 10px;
+}
+
+/* Pinned tab marker (middle dot) */
+.pinned-marker {
+    margin-right: 6px;
+    color: rgba(0,0,0,0.6);
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Screen-reader only text */
+.sr-only {
+    position: absolute !important;
+    height: 1px; width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap; /* added line */
 }
 
 /* Collapsible Section Styles */
 .toggle-arrow {
     width: 16px;
     height: 16px;
-    margin-right: 5px;
+    margin-right: 10px; /* match spacing used by bullets/favicons */
     display: inline-block;
     cursor: pointer;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666666"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Right arrow */
     background-size: cover;
     transition: transform 0.2s ease-in-out;
     flex-shrink: 0;
+}
+
+/* Nudge group header arrow a bit right so it vertically lines up with tab bullets */
+.group-item .toggle-arrow {
+    margin-left: -6px; /* align arrow center with the tab-item bullet center */
 }
 
 .toggle-arrow.expanded {

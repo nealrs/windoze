@@ -149,10 +149,27 @@ function createTabList(tabs, windowId, className) {
 
         const title = document.createElement('span');
         title.className = 'item-title';
-        title.textContent = tab.title;
-        
+        title.textContent = (tab.title || tab.url || '');
+
         tabLink.appendChild(favicon);
         tabLink.appendChild(title);
+
+        // If tab is pinned, prepend a small glyph marker (U+25F8) before the title
+        if (tab.pinned) {
+            const marker = document.createElement('span');
+            marker.className = 'pinned-marker';
+            marker.textContent = '\u25B4'; // small glyph
+            marker.setAttribute('aria-hidden', 'true');
+
+            const sr = document.createElement('span');
+            sr.className = 'sr-only';
+            sr.textContent = ' (pinned)';
+
+            // Insert marker right before the title element for visual prepending
+            tabLink.insertBefore(marker, title);
+            // Append the screen-reader-only label after the title so readers hear "Title (pinned)"
+            tabLink.appendChild(sr);
+        }
 
         tabLink.addEventListener('click', () => {
             chrome.windows.update(windowId, { focused: true }, () => {
@@ -298,73 +315,81 @@ async function renderList(shouldRestoreScroll = false) {
         windowHeader.appendChild(windowTitleArea);
         windowItem.appendChild(windowHeader);
         
-        // Data structure to organize tabs by group
-        const tabsByGroup = new Map([['none', []]]); // 'none' key for tabs not in any group
-        for (const group of tabGroups) {
-            if (group.windowId === win.id) {
-                tabsByGroup.set(group.id, []);
-            }
-        }
+        // Render tabs and groups in the exact sequence they appear in the browser
+        // We'll iterate win.tabs (which is already in browser order) and emit
+        // either a group header (the first time we encounter a group's tab)
+        // or a single tab item for ungrouped tabs.
+        
+        // Keep track of which groups we've already rendered for this window
+        const renderedGroups = new Set();
 
+        // Iterate through the window's tabs in order
         for (const tab of win.tabs) {
             const groupId = tab.groupId > -1 ? tab.groupId : 'none';
-            if (tabsByGroup.has(groupId)) {
-                tabsByGroup.get(groupId).push(tab);
+
+            if (groupId === 'none') {
+                // Ungrouped tab: render as a single tab list item
+                const singleTabList = createTabList([tab], win.id, 'tab-list-no-group');
+                windowContent.appendChild(singleTabList);
+            } else {
+                // Tab belongs to a group. If we haven't rendered the group header yet,
+                // render the group header and then render all the tabs in that group
+                // (in order) by filtering win.tabs for that group.
+                if (!renderedGroups.has(groupId)) {
+                    const groupInfo = groupMap.get(groupId);
+                    // Only render groups that belong to this window and exist
+                    if (!groupInfo || groupInfo.windowId !== win.id) {
+                        // Fallback: render the tab as ungrouped if group meta is missing
+                        const singleTabList = createTabList([tab], win.id, 'tab-list-no-group');
+                        windowContent.appendChild(singleTabList);
+                    } else {
+                        const groupList = document.createElement('ul');
+                        groupList.className = 'group-list';
+
+                        const groupItem = document.createElement('li');
+                        const groupHeader = document.createElement('div');
+                        groupHeader.className = 'group-item';
+
+                        // Create collapsible content div for this group *before* arrow
+                        const groupContentId = `group-content-${groupId}`;
+                        const tabsInGroupContainer = document.createElement('div');
+                        tabsInGroupContainer.id = groupContentId;
+                        if (collapsedState[groupContentId]) {
+                            tabsInGroupContainer.classList.add('collapsed');
+                        }
+
+                        const groupArrow = createToggleArrow(groupContentId);
+                        groupHeader.appendChild(groupArrow);
+
+                        const groupTitleArea = document.createElement('div');
+                        groupTitleArea.className = 'group-title-area';
+                        groupTitleArea.innerHTML = `
+                            <span class="group-color-dot" style="background-color: ${groupInfo.color};"></span>
+                            <span class="item-title">${groupInfo.title || 'Untitled Group'}</span>
+                        `;
+                        groupTitleArea.addEventListener('click', () => {
+                            chrome.windows.update(win.id, { focused: true }, () => {
+                                // Focus the first tab in the group (if any)
+                                const firstTab = win.tabs.find(t => t.groupId === groupId);
+                                if (firstTab) chrome.tabs.update(firstTab.id, { active: true });
+                            });
+                        });
+                        groupHeader.appendChild(groupTitleArea);
+                        groupItem.appendChild(groupHeader);
+
+                        // Collect tabs for this group in the original order
+                        const tabsInGroup = win.tabs.filter(t => t.groupId === groupId);
+                        const tabsInGroupList = createTabList(tabsInGroup, win.id, 'tab-list-in-group');
+                        tabsInGroupContainer.appendChild(tabsInGroupList);
+                        groupItem.appendChild(tabsInGroupContainer);
+
+                        groupList.appendChild(groupItem);
+                        windowContent.appendChild(groupList);
+                    }
+                    renderedGroups.add(groupId);
+                }
+                // If group already rendered, skip — its tabs were added when rendering the group
             }
-        }
-        
-        // Render tab groups and their contained tabs
-        for (const [groupId, tabs] of tabsByGroup.entries()) {
-            if (groupId === 'none' || tabs.length === 0) continue; 
-
-            const groupInfo = groupMap.get(groupId);
-            if (!groupInfo || groupInfo.windowId !== win.id) continue; 
-
-            const groupList = document.createElement('ul');
-            groupList.className = 'group-list';
-            
-            const groupItem = document.createElement('li');
-            const groupHeader = document.createElement('div');
-            groupHeader.className = 'group-item';
-
-            // Create collapsible content div for this group *before* arrow
-            const groupContentId = `group-content-${groupId}`;
-            const tabsInGroupContainer = document.createElement('div');
-            tabsInGroupContainer.id = groupContentId;
-            if (collapsedState[groupContentId]) {
-                tabsInGroupContainer.classList.add('collapsed');
-            }
-
-            const groupArrow = createToggleArrow(groupContentId);
-            groupHeader.appendChild(groupArrow);
-
-            const groupTitleArea = document.createElement('div');
-            groupTitleArea.className = 'group-title-area';
-            groupTitleArea.innerHTML = `
-                <span class="group-color-dot" style="background-color: ${groupInfo.color};"></span>
-                <span class="item-title">${groupInfo.title || 'Untitled Group'} (${tabs.length} tabs)</span>
-            `;
-            groupTitleArea.addEventListener('click', () => {
-                chrome.windows.update(win.id, { focused: true }, () => {
-                    if (tabs.length > 0) chrome.tabs.update(tabs[0].id, { active: true });
-                });
-            });
-            groupHeader.appendChild(groupTitleArea);
-            groupItem.appendChild(groupHeader);
-            
-            const tabsInGroupList = createTabList(tabs, win.id, 'tab-list-in-group');
-            tabsInGroupContainer.appendChild(tabsInGroupList);
-            groupItem.appendChild(tabsInGroupContainer);
-
-            groupList.appendChild(groupItem);
-            windowContent.appendChild(groupList);
-        }
-
-        // Render tabs that are not part of any group
-        const ungroupedTabs = tabsByGroup.get('none');
-        if (ungroupedTabs && ungroupedTabs.length > 0) {
-            const ungroupedTabList = createTabList(ungroupedTabs, win.id, 'tab-list-no-group');
-            windowContent.appendChild(ungroupedTabList);
         }
 
         windowItem.appendChild(windowContent);
