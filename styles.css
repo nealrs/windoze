@@ -1,0 +1,134 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 8px;
+    font-size: 14px;
+    background-color: #f4f4f9;
+    color: #333;
+    min-width: 300px; /* Added responsiveness */
+    max-width: 600px; /* Added responsiveness */
+}
+
+.header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-size: 16px;
+    margin: 0;
+    color: #111;
+}
+
+.window-item, .group-item, .tab-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none; /* Prevent accidental text selection when clicking */
+}
+
+.window-item:hover, .group-item:hover, .tab-item:hover {
+    background-color: #e9e9f0;
+}
+
+/* Specific styling for the actual clickable title area, which can also be edited */
+.window-item .window-title-area, .group-item .group-title-area {
+    flex-grow: 1; /* Allow it to take up space */
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.window-item.active-window {
+    border: 1px solid #a3c7f7;
+    background-color: #e0effc;
+}
+
+.window-item .item-title {
+    font-weight: bold;
+    color: #005fcc;
+    flex-grow: 1;
+    min-width: 0; /* Allow text-overflow to work */
+}
+
+/* Style for editable title */
+.editable-title {
+    outline: none;
+    border-bottom: 1px dotted transparent; /* Transparent dotted line by default */
+    padding-bottom: 1px;
+}
+.editable-title:focus {
+    background-color: #fff;
+    border-bottom: 1px solid #005fcc; /* Solid line when focused */
+}
+
+
+.tab-item.active-tab {
+    background-color: #dbeafe;
+    font-weight: bold;
+}
+
+.window-list, .group-list, .tab-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 0; /* Remove default ul margin */
+    margin-bottom: 0;
+}
+
+/* Indentation levels */
+.group-list {
+    padding-left: 20px;
+}
+.tab-list-in-group {
+    padding-left: 40px; /* Increased indent for tabs inside a group */
+}
+.tab-list-no-group {
+    padding-left: 40px; /* Tabs not in group, same as group level */
+}
+
+
+.item-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    max-width: 16px;
+    max-height: 16px;
+    object-fit: contain;
+}
+
+.group-color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Collapsible Section Styles */
+.toggle-arrow {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+    display: inline-block;
+    cursor: pointer;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666666"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Right arrow */
+    background-size: cover;
+    transition: transform 0.2s ease-in-out;
+    flex-shrink: 0;
+}
+
+.toggle-arrow.expanded {
+    transform: rotate(90deg); /* Down arrow when expanded */
+}
+
+.collapsed {
+    display: none;
+}
