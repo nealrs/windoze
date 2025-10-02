@@ -163,7 +163,7 @@ h1 {
 .toggle-arrow {
     width: 16px;
     height: 16px;
-    margin-right: 10px; /* match spacing used by bullets/favicons */
+    margin-right: 4px; /* tightened spacing to bring dot closer to arrow */
     display: inline-block;
     cursor: pointer;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666666"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Right arrow */
@@ -174,7 +174,12 @@ h1 {
 
 /* Nudge group header arrow a bit right so it vertically lines up with tab bullets */
 .group-item .toggle-arrow {
-    margin-left: -6px; /* align arrow center with the tab-item bullet center */
+    margin-left: -2px; /* slight left nudge so arrow centers on the tab bullet */
+}
+
+/* Nudge entire group row slightly left to better align with ungrouped favicons */
+.group-item {
+    transform: translateX(-3px);
 }
 
 .toggle-arrow.expanded {
